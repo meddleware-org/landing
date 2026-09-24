@@ -1,0 +1,32 @@
+node_modules/
+dist/
+dist-ssr/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.DS_Store
+*.tsbuildinfo
+
+# Env files (none required for this package, but guard against accidental creation)
+.env
+.env.*
+!.env.*example
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Vite temp files
+*.timestamp-*-*.mjs
