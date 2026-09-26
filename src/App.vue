@@ -8,7 +8,7 @@ const { mode } = useColorMode('dark')
 <template>
   <a class="skip-link" href="#main-content">Skip to main content</a>
 
-  <AppHeader variant="transparent" :sticky="true">
+  <AppHeader variant="transparent" :sticky="true" :solidify-on-scroll="true">
     <template #brand>
       <a href="/" class="brand-link" aria-label="Meddleware home">
         <span class="brand-mark" aria-hidden="true">◆</span>
