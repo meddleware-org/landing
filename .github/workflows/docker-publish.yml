@@ -26,6 +26,8 @@ jobs:
         run: npm run lint:css --if-present
       - name: Lint JS (eslint + vuejs-a11y)
         run: npm run lint:js --if-present
+      - name: Lint HTML (html-validate)
+        run: npm run lint:html --if-present
       - name: Unit tests
         run: npm run test --if-present
 
