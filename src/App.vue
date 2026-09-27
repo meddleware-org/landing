@@ -2,7 +2,8 @@
 import { RouterView } from 'vue-router'
 import { AppHeader, AppFooter, CopyrightLine, useColorMode } from '@meddleware/ui'
 
-const { mode } = useColorMode('dark')
+// Initialise the colour mode (dark default); landing has no toggle, so the binding is unused.
+useColorMode('dark')
 </script>
 
 <template>

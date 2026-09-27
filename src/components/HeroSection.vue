@@ -79,7 +79,7 @@
   display: none;
 }
 
-@media (min-width: 600px) {
+@media (width >= 600px) {
   .hero__br {
     display: inline;
   }
@@ -134,7 +134,7 @@
   line-height: 1;
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
   .hero__glyph {
     display: none;
   }
