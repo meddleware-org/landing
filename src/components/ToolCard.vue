@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { safeHref } from '@meddleware/ui'
+
 /**
  * ToolCard — one feature / tool card in the FeaturesGrid.
  *
  * Renders as a `<UiCard>`-styled article with an emoji icon, title, description,
- * and an optional link. The link is applied to the whole card surface when provided.
+ * and an optional link (through `safeHref`: only https URLs render as a link).
  */
 defineProps<{
   /** Emoji or single character used as the visual icon. Rendered `aria-hidden`. */
@@ -22,7 +24,7 @@ defineProps<{
     <div class="tool-card__icon" aria-hidden="true">{{ icon }}</div>
     <div class="tool-card__body">
       <h3 class="tool-card__title">
-        <a v-if="href" :href="href" class="tool-card__link" target="_blank" rel="noopener noreferrer">
+        <a v-if="safeHref(href)" :href="safeHref(href)" class="tool-card__link" target="_blank" rel="noopener noreferrer">
           {{ title }} <span aria-hidden="true">↗</span>
         </a>
         <template v-else>{{ title }}</template>

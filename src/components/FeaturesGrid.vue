@@ -31,11 +31,11 @@ const tools = [
     href: 'https://sui-token-deployer.meddleware.co.uk',
   },
   {
-    icon: '🏛',
-    title: 'DAO Console',
+    icon: '📊',
+    title: 'Treasury',
     description:
-      'Govern your vault on-chain. Propose, vote, and execute DAO actions through a clean browser interface.',
-    href: 'https://sui-dao.meddleware.co.uk',
+      'A read-only view of the organisation treasury: platform commission, balances and recent access-pass activity.',
+    href: 'https://treasury.meddleware.co.uk',
   },
 ] as const
 </script>
