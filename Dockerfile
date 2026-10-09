@@ -27,7 +27,7 @@ RUN npm run build
 # static-server is a minimal Go binary image — no shell, no package manager.
 # See https://github.com/meddleware-org/static-server for configuration details.
 
-FROM quay.io/meddleware-org/static-server:0.1.6@sha256:be51c4ee9c80fbbeda1f546efa918a72628388bd0fac0f52876e8234b51275c0
+FROM quay.io/meddleware-org/static-server:0.1.7@sha256:2e2273115b7575acbeb01c6d75f867be67125405f1bda5d956ae512d13c92379
 ARG CSP
 ENV CONTENT_SECURITY_POLICY="${CSP}"
 
