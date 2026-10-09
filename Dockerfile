@@ -37,4 +37,7 @@ ENV SERVE_DIR=/app/public \
     SPA_FALLBACK=true \
     CACHE_IMMUTABLE_PREFIX=/assets/
 
+# The base image already runs as nobody; say so here too so the Dockerfile is self-describing.
+USER 65534:65534
+
 EXPOSE 8080
