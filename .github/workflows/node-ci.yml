@@ -11,6 +11,8 @@ on:
     branches: ["**"]
   pull_request:
     branches: ["**"]
+  # The release workflow runs the same checks on the tagged commit.
+  workflow_call:
 
 permissions:
   contents: read
@@ -50,6 +52,9 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+
+      - name: Third-party licence notices
+        run: npm run check:licenses && test -s dist/THIRD_PARTY_LICENSES
 
   scan:
     name: Filesystem scan (Trivy)

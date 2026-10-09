@@ -1,6 +1,6 @@
 {
   "name": "@meddleware/landing",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,9 @@
     "lint:css": "stylelint \"src/**/*.{css,vue}\"",
     "lint:js": "eslint .",
     "lint": "npm run lint:css && npm run lint:js && npm run lint:html",
-    "lint:html": "html-validate \"src/**/*.vue\""
+    "lint:html": "html-validate \"src/**/*.vue\"",
+    "licenses": "node scripts/third-party-licenses.mjs",
+    "check:licenses": "node scripts/third-party-licenses.mjs --check"
   },
   "dependencies": {
     "@meddleware/design-tokens": "^0.1.9",
