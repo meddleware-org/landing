@@ -56,8 +56,8 @@ does not allow; **F9 (Info, RESOLVED)** the repository has unit tests and `node-
 **F10 (Info, RESOLVED)** the browser axe run found a real defect (the dimmed footer links reached 4.12:1 in the
 dark footer) and it is fixed and pinned in CI for the home and 404 pages in every theme x season; **F11
 (Info, RESOLVED)** the CSP's `connect-src`, `img-src` and `worker-src` are narrowed to `'self'` after a browser
-probe. Still open: **F12** the cosign identity pins the repository not the workflow (ACCEPTED-RISK, workspace
-script); **F13** registry mirror and credential inventory (DEFERRED, maintainer).
+probe. **F12** the cosign identity pinned the repository, not the workflow (RESOLVED 2026-10-18: the workspace
+`verify-digests.sh` default is now workflow-anchored). Still open: **F13** registry mirror and credential inventory (DEFERRED, maintainer).
 
 The severity ceiling stays Low.
 
@@ -269,13 +269,17 @@ cross-origin `fetch` is reported as a `connect-src` violation). With the probe g
 
 ### F12 — The cosign identity pins the repository, not the workflow
 
-**Severity:** Info   **Disposition:** ACCEPTED-RISK
+**Severity:** Info   **Disposition:** RESOLVED (2026-10-18, workspace `verify-digests.sh` default; was ACCEPTED-RISK)
 **Where:** `bootstrap/images/verify-digests.sh` (workspace); this repository publishes no verify command
-**Issue:** the cluster check accepts any workflow identity of `github.com/meddleware-org/landing`.
-**Impact:** a workflow added by someone with write access could sign an image the check would accept.
-**Remediation / evidence:** the repository is the signing boundary; anchoring to
-`docker-publish.yml@refs/tags/v*` is a `COSIGN_IDENTITY_REGEXP` override in the workspace script. The
-deployed digests verified 2026-10-09 (0.0.11) and 2026-10-18 (0.0.12), 16/16 both times; the 2026-10-18 run used the workflow-anchored identity `docker-publish.yml@refs/tags/v*`, which is narrower than the repository-wide check this finding describes (disposition left to the workspace audit).
+**Issue:** the cluster check accepted any workflow identity of `github.com/meddleware-org/landing`.
+**Impact:** a workflow added by someone with write access could have signed an image the check would accept.
+**Remediation / evidence:** fixed in the workspace script on 2026-10-18: the default identity in
+`bootstrap/images/verify-digests.sh` is now `^https://github\.com/meddleware-org/${name}/\.github/workflows/docker-publish\.yml@refs/tags/v`
+(`COSIGN_IDENTITY_REGEXP` still overrides it), so a signature from any other workflow or ref of the repository is
+rejected. All 16 deployed and contingency images verified valid against it on 2026-10-18
+(`STRICT=0 bash bootstrap/images/verify-digests.sh`, 0.0.12 included); 2026-10-09 (0.0.11) was
+checked with the earlier repository-wide identity. This repository publishes no verify command, so the script
+default was the only remaining problem.
 
 ### F13 — Self-hosted registry mirror and registry credentials
 
@@ -319,7 +323,7 @@ verifies signatures, so it would not run).
 | VUE | Dual app / library | N/A — the app exports no view |
 | VUE | Estimates, chain-access layering | N/A — no chain logic |
 | IMG | Base images, build context, reproducible build, no secrets, runtime user, scan, SBOM and notices | HOLDS (F8) — digest-pinned `node:24-slim` and static-server 0.1.8 (0.0.12); `.dockerignore` excludes `node_modules`, `dist`, `.git`, `.github` and `.env*.local`; `npm ci`; the only `ARG` is the public `CSP`; Trivy before cosign; lockfile in the image; `/THIRD_PARTY_LICENSES` served; the CI `image` job builds the Dockerfile and runs `scripts/smoke.sh` against the container (read-only, non-root, no capabilities) |
-| IMG | Verification command | GAP accepted — the identity pins the repository (F12) |
+| IMG | Verification command | HOLDS — this repository publishes no command; the cluster check pins `docker-publish.yml@refs/tags/v` (F12, RESOLVED 2026-10-18) |
 | IMG | Deployment pinning | HOLDS — digest in `config/images.yaml` and the overlay; the base manifest's tag (`0.1.0`) is overridden by the overlay digest and is cosmetic |
 
 ## Section B — Supply-chain, publish-authority & capability matrix
@@ -447,7 +451,7 @@ test-hook scan to run.
 - **VUE-M1, M2, M3, M7, M9** — hold (no untrusted input; no `VITE_*`; no test mode; no storage of its own;
   no embedded library); **VUE-M4–M6** not applicable (no wallet); **VUE-M8** holds on the one hosting path
   (B.VUE-1; F5); the *Colour & links* category is verified in a browser (F10).
-- **IMG-M1–IMG-M8** — hold; IMG-M8's verification command pins the repository only (F12).
+- **IMG-M1–IMG-M8** — hold; IMG-M8 holds: no command is published here and the cluster check pins the publish workflow and tag refs (F12, RESOLVED 2026-10-18).
 
 ## Implementation suggestions (SHOULD / MAY)
 
@@ -496,3 +500,4 @@ None.
   workspace script) and F13 and the external review stay open (maintainer). To do on release: deploy the
   0.0.12 digest and check the live headers and the browser console once (F11) — done 2026-10-18, see the next entry.
 - 2026-10-18 — released and deployed (`v0.0.12` = `6ceec28`, `0.0.12@sha256:8a7f57afce5e8276f284bfc265e12b7f70c93e966f0265b1272d6e48b887a286`), verified live. Cosign keyless signature verified against the workflow-anchored identity (`verify-digests.sh` 16/16); rollout (`apply.sh landing`) succeeded. The narrowed CSP (`connect-src 'self'`, `img-src 'self' data:`, no `worker-src`) produced zero console errors and zero CSP violations on the live page in headless Chromium, Cloudflare edge scripts included (F11 closed in practice); the live header was re-read with `curl -I`. F12, F13 and the external review remain open (maintainer).
+- 2026-10-18 — F12 (cosign identity) RESOLVED: the default identity in `bootstrap/images/verify-digests.sh` is now workflow-anchored (`^https://github\.com/meddleware-org/${name}/\.github/workflows/docker-publish\.yml@refs/tags/v`); all 16 deployed and contingency images verified valid against it (`STRICT=0 bash bootstrap/images/verify-digests.sh`). This repository publishes no verify command, so nothing else remained.
