@@ -19,7 +19,7 @@
 **Review date:** 2026-10-03 (first pass) · re-verified 2026-10-09 · fixes 2026-10-18 (0.0.12)
 **Reviewer:** Internal review
 **Severity ceiling:** Low — a static page with no wallet, chain access, forms or user data.
-**Status:** re-verified 2026-10-09; F5, F6, F7, F9, F10 and F11 fixed in 0.0.12 (commit pending, not yet released or deployed)
+**Status:** re-verified 2026-10-09; F5, F6, F7, F9, F10 and F11 fixed in 0.0.12 (commit `ee6a1f2`, not yet released or deployed)
 
 ---
 
@@ -48,7 +48,7 @@ resolve. Fixed since the first pass:
   serves `/THIRD_PARTY_LICENSES` (HTTP 200 live), runs as an explicit `USER 65534:65534` on static-server
   0.1.7, and the pod sets `automountServiceAccountToken: false`.
 
-The newly applicable lens checks found defects that are **fixed in 0.0.12 (commit pending; not yet released
+The newly applicable lens checks found defects that are **fixed in 0.0.12 (commit `ee6a1f2`; not yet released
 or deployed)**: **F5 (Low, RESOLVED)** the vestigial `public/_headers` (with `script-src 'unsafe-inline'`) and
 `CNAME` are deleted; **F6 (Info, RESOLVED)** unknown paths now answer a real 404 page (`NOT_FOUND_PAGE`);
 **F7 (Info, RESOLVED)** `scripts/check-csp-inline.mjs` fails the image build and CI on an inline script the CSP
@@ -142,7 +142,7 @@ live header adds only static-server's per-response nonce (for Cloudflare's scrip
 
 ### F5 — A vestigial `_headers` file is shipped and served
 
-**Severity:** Low   **Disposition:** RESOLVED (0.0.12, commit pending)
+**Severity:** Low   **Disposition:** RESOLVED (0.0.12, commit `ee6a1f2`)
 **Where:** `public/_headers`, `public/CNAME` (copied into `dist/` by Vite and into the image)
 **Issue:** `_headers` is a static-host (Cloudflare Pages / Netlify) file: it sets `script-src 'self'
 'unsafe-inline'` (the VUE lens forbids `'unsafe-inline'` for scripts), `X-Frame-Options: DENY`, a
@@ -161,7 +161,7 @@ image and requires 404 (run 2026-10-18 with rootless podman: passed; the CI `ima
 
 ### F6 — Unknown paths answer 200 with the page shell
 
-**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit `ee6a1f2`)
 **Where:** `Dockerfile` (`SPA_FALLBACK=true`), `post-bootstrap/landing/base/deployment.yaml`,
 `src/main.ts` (one route, no catch-all)
 **Issue:** the image serves every unknown path with `index.html` and status 200 (live `/no/such` answers
@@ -178,7 +178,7 @@ by `e2e/contrast.spec.ts` / `e2e/csp.spec.ts` over `/404.html`.
 
 ### F7 — No build-time check that every inline script is covered by the CSP
 
-**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit `ee6a1f2`)
 **Where:** `Dockerfile`; `scripts/`
 **Issue:** B.VUE-1 asks for a build-time check that fails on an inline script the policy does not allow.
 The policy is `script-src 'self'` (no hashes) and today's `dist/index.html` has exactly one script, the
@@ -218,7 +218,7 @@ scan of the Dockerfile (the filesystem scan includes misconfiguration checks).
 
 ### F9 — The CI workflow has no `npm test` step
 
-**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit `ee6a1f2`)
 **Where:** `.github/workflows/node-ci.yml`; `docker-publish.yml` `verify` calls it
 **Issue:** `node-ci.yml` has no `npm test` step, and the comment in `docker-publish.yml` ("type-check, lint,
 tests, build, licences") overstates what the release runs.
@@ -232,7 +232,7 @@ the comment in `docker-publish.yml` is now accurate. The Playwright suite (`npm 
 
 ### F10 — Contrast of the page's own text is not checked in a browser
 
-**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit `ee6a1f2`)
 **Where:** `src/App.vue` (`.header-nav__link` opacity 0.8, `.footer-link` opacity 0.65), `src/components/*.vue`
 (`--muted` text, `opacity: 0.85` hover states)
 **Issue:** the VUE lens requires WCAG AA contrast in every theme × season, checked in a real browser (axe)
@@ -251,7 +251,7 @@ the same pattern as `walrus-relay`; passed locally 2026-10-18, 19 tests includin
 
 ### F11 — `connect-src` allows any https origin
 
-**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending; was ACCEPTED-RISK)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit `ee6a1f2`; was ACCEPTED-RISK)
 **Where:** `Dockerfile` (`CSP` argument); live header read 2026-10-10
 **Issue:** `connect-src 'self' https:` and `img-src 'self' data: blob: https:` are blanket allowances,
 copied from the application images; the Dockerfile comment justifies them with operator-configured RPC and
@@ -416,16 +416,16 @@ test-hook scan to run.
 - [x] 0.0.11 deployed by digest; live headers, `/THIRD_PARTY_LICENSES` and links probed (2026-10-10)
 - [x] image: digest-pinned bases, non-root, restricted pod, probes and limits, signed with SBOM and provenance, scanned before signing (F8)
 - [x] test-mode guards: not applicable (no test mode); signing UX and storage keys: not applicable (no wallet; colour mode only)
-- [x] every test project runs in CI — F9 (0.0.12, commit pending: `npm test` in `node-ci.yml`; the Playwright gate is the `e2e` job)
-- [x] inline scripts checked at build time — F7 (0.0.12, commit pending: `scripts/check-csp-inline.mjs` in the Dockerfile and CI; `tests/check-csp-inline.test.ts`)
-- [x] only one description of the served headers exists — F5 (0.0.12, commit pending: `_headers` and `CNAME` deleted; `smoke.sh` requires 404 for both)
+- [x] every test project runs in CI — F9 (0.0.12, commit `ee6a1f2`: `npm test` in `node-ci.yml`; the Playwright gate is the `e2e` job)
+- [x] inline scripts checked at build time — F7 (0.0.12, commit `ee6a1f2`: `scripts/check-csp-inline.mjs` in the Dockerfile and CI; `tests/check-csp-inline.test.ts`)
+- [x] only one description of the served headers exists — F5 (0.0.12, commit `ee6a1f2`: `_headers` and `CNAME` deleted; `smoke.sh` requires 404 for both)
 
 ### pre-mainnet
 
 
 - [x] no npm release path (`private`; package absent from npm, 2026-10-08 and 2026-10-10)
 - [x] CSP and HSTS on the one hosting path (B.VUE-1); no wallet events or irreversible actions to guard (VUE-M4–M6 not applicable)
-- [x] contrast checked in a browser in every theme × season — F10 (0.0.12, commit pending: `e2e/contrast.spec.ts`, 16 tests; found and fixed the footer links at 4.12:1)
+- [x] contrast checked in a browser in every theme × season — F10 (0.0.12, commit `ee6a1f2`: `e2e/contrast.spec.ts`, 16 tests; found and fixed the footer links at 4.12:1)
 - [ ] registry credential inventory and rotation (F13) — `OPERATOR_TASKS.md` "Image registry credentials"
 - [ ] external review — maintainer item (`OPERATOR_TASKS.md` "Funding, grants and an external audit")
 
@@ -487,7 +487,7 @@ None.
   ACCEPTED-RISK), F12 (cosign identity; ACCEPTED-RISK), F13 (mirror and credentials; DEFERRED,
   maintainer). Section D ticked with evidence; unticked: the next-patch items and the mainnet/maintainer
   items.
-- 2026-10-18 — fix wave for 0.0.12 (commit pending; not released or deployed): dependencies to design-tokens
+- 2026-10-18 — fix wave for 0.0.12 (commit `ee6a1f2`; not released or deployed): dependencies to design-tokens
   ^0.1.10 and static-server 0.1.8 (`sha256:e32cf42b…4000`, verified against quay.io). F5 (`_headers`, `CNAME`
   deleted), F6 (real 404 page via `NOT_FOUND_PAGE`), F7 (inline-script check in the Dockerfile and CI), F9
   (vitest and `npm test` in CI), F10 (Playwright + axe over the home and 404 pages, every theme x season; the
