@@ -14,8 +14,10 @@ marketing/navigation page. Keep it that way.
 ```
 src/
   App.vue             AppHeader (transparent) + RouterView + AppFooter (dark)
+  routes.ts           `/` HomeView + catch-all NotFoundView (served by 404.html with status 404)
   views/
     HomeView.vue      Composes HeroSection + FeaturesGrid + CtaSection
+    NotFoundView.vue  The 404 page content
   components/
     HeroSection.vue   Full-viewport hero with gradient, headline, CTAs
     FeaturesGrid.vue  Responsive grid of ToolCard entries — one per live tool
@@ -66,4 +68,8 @@ npm install
 npm run type-check  # vue-tsc
 npm run build       # type-check + vite build → dist/
 npm run dev         # local dev server at http://localhost:5173
+npm test            # vitest: inline-script check, route table
+npm run check:csp   # after build: no inline script that the Dockerfile CSP forbids
+npm run test:e2e    # Playwright + axe (contrast, theme x season) and a no-violation load under the CSP
+bash scripts/smoke.sh <image>   # container probe (CONTAINER_ENGINE=podman for rootless)
 ```

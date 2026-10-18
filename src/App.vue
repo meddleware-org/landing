@@ -88,15 +88,15 @@ useColorMode('dark')
   opacity: 1;
 }
 
+/* The footer already sets the muted token colour (AA on its background in every theme x season); dimming it
+   further with opacity dropped it below 4.5:1 (audit F10), so the hover state is the underline alone. */
 .footer-link {
   color: inherit;
   text-decoration: none;
   font-size: var(--font-size-sm);
-  opacity: 0.65;
-  transition: opacity var(--transition-base, 150ms ease);
 }
 
 .footer-link:hover {
-  opacity: 1;
+  text-decoration: underline;
 }
 </style>

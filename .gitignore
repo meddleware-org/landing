@@ -30,3 +30,7 @@ pnpm-debug.log*
 
 # Vite temp files
 *.timestamp-*-*.mjs
+
+# Playwright
+test-results/
+playwright-report/

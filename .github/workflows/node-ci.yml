@@ -4,7 +4,8 @@ name: Node CI
 # The publish workflow fires only on version tags; keeping this green before
 # tagging is the release gate.
 #
-# Jobs: type-check (vue-tsc) → build (vite) → scan (Trivy filesystem)
+# Jobs: type-check (vue-tsc, linters, unit tests) → build (vite, licence notices, inline-script check) →
+#       e2e (Playwright + axe, theme × season) · image (build and probe) · scan (Trivy filesystem)
 
 on:
   push:
@@ -38,6 +39,8 @@ jobs:
         run: npm run lint:js
       - name: Lint HTML (html-validate)
         run: npm run lint:html
+      - name: Unit tests
+        run: npm test
 
   build:
     name: Build (vite)
@@ -55,6 +58,36 @@ jobs:
 
       - name: Third-party licence notices
         run: npm run check:licenses && test -s dist/THIRD_PARTY_LICENSES
+
+      - name: Inline scripts are covered by the CSP
+        run: npm run check:csp
+
+  e2e:
+    name: Real-browser accessibility (Playwright + axe, theme × season)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Built page and 404 page, every theme × season
+        run: npm run test:e2e
+
+  image:
+    name: Image (build and probe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Not pushed. Builds the Dockerfile as the release does (the inline-script check included) and runs the
+      # container the way the cluster does: non-root user, read-only root, no capabilities.
+      - name: Build (not pushed)
+        run: docker build --tag landing:ci .
+      - name: Probe the container (user, /, headers, bundle, licences, 404)
+        run: bash scripts/smoke.sh landing:ci
 
   scan:
     name: Filesystem scan (Trivy)

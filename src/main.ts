@@ -7,14 +7,14 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSeason } from '@meddleware/ui'
 import App from './App.vue'
-import HomeView from './views/HomeView.vue'
+import { routes } from './routes'
 
 // Enable seasonal theming (sets data-season on <html>; seasons.css imported above).
 useSeason()
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: [{ path: '/', component: HomeView }],
+  routes,
 })
 
 createApp(App).use(router).mount('#app')

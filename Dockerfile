@@ -8,11 +8,11 @@
 # No VITE_* build args are required — the landing page has no wallet, no chain
 # SDK, and no operator-configurable runtime values.
 
-# Content-Security-Policy served by static-server (verified 2026-09-30: production build loaded in
-# Chromium under this policy with zero violations). script-src stays 'self'; connect-src allows
-# any https origin because RPC, relay, aggregator and Seal key-server hosts are partly operator- or
-# chain-configured; img-src allows https:/data:/blob: for on-chain images and local previews.
-ARG CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+# Content-Security-Policy served by static-server. The page makes no request at all (no fetch, no storage but the
+# colour mode, no remote image or font), so every fetch directive stays on 'self' (connect-src, img-src and
+# worker-src are no longer opened to any https origin). e2e/csp.spec.ts loads the built pages under exactly this
+# policy and fails on any violation; scripts/check-csp-inline.mjs fails the build on an inline script.
+ARG CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
 
 FROM node:24-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 AS build
 WORKDIR /app
@@ -22,12 +22,15 @@ RUN npm ci
 
 COPY . .
 RUN npm run build && npm run licenses
+ARG CSP
+# The CSP has no 'unsafe-inline' for scripts: the build fails if dist/ ever carries an inline <script>.
+RUN node scripts/check-csp-inline.mjs "${CSP}" dist
 
 # ── runtime stage ─────────────────────────────────────────────────────────────
 # static-server is a minimal Go binary image — no shell, no package manager.
 # See https://github.com/meddleware-org/static-server for configuration details.
 
-FROM quay.io/meddleware-org/static-server:0.1.7@sha256:2e2273115b7575acbeb01c6d75f867be67125405f1bda5d956ae512d13c92379
+FROM quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b182d270c4ef57181e5588e7df454a42cac66e83d8ae59d9c7b7c4000
 ARG CSP
 ENV CONTENT_SECURITY_POLICY="${CSP}"
 
@@ -36,8 +39,10 @@ COPY --from=build /app/dist /app/public
 # package metadata). It sits outside the served directory; THIRD_PARTY_LICENSES is served with the site.
 COPY --from=build /app/package-lock.json /usr/share/doc/landing/package-lock.json
 
+# One route, so no SPA fallback: an unknown path gets the 404 page (404.html, which runs the same app) with a
+# real 404 status instead of the home page with a 200.
 ENV SERVE_DIR=/app/public \
-    SPA_FALLBACK=true \
+    NOT_FOUND_PAGE=/404.html \
     CACHE_IMMUTABLE_PREFIX=/assets/
 
 # The base image already runs as nobody; say so here too so the Dockerfile is self-describing.
