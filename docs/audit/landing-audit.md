@@ -10,16 +10,16 @@
 **Hosting:** container image on static-server 0.1.8 (CSP and HSTS from the server; unknown paths answer the 404 page with status 404); the vestigial `public/_headers` and `public/CNAME` were removed in 0.0.12 (F5)
 **Embedding hosts:** none (no exported view)
 **VITE_\* inventory:** none — `import.meta.env` is not read anywhere in `src/`
-**Images:** `quay.io/meddleware-org/landing:0.0.11@sha256:392c4b1b…520a` (Docker Hub mirror; cosign keyless, SPDX SBOM attestation, build provenance; cosign-verified 2026-10-09, `verify-digests.sh` 16/16)
-**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000` from 0.0.12 (0.1.7 `sha256:2e227311…2379` in the deployed 0.0.11)
+**Images:** `quay.io/meddleware-org/landing:0.0.12@sha256:8a7f57afce5e8276f284bfc265e12b7f70c93e966f0265b1272d6e48b887a286` (Docker Hub mirror, same digest; cosign keyless signature verified 2026-10-18 against the workflow-anchored identity, `verify-digests.sh` 16/16; SPDX SBOM attestation, build provenance). Superseded 0.0.11 was `sha256:392c4b1b…520a`
+**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000` in 0.0.12 (the 0.0.11 image deployed 2026-10-09 was on 0.1.7 `sha256:2e227311…2379`)
 **Runtime user:** `USER 65534:65534`   **Runtime FS:** read-only root, no writable mounts
 **Deployed by:** `post-bootstrap/landing/overlays/default`; digest from `config/images.yaml`
 **Build args:** `CSP` only (the Content-Security-Policy string) — not secret, not a test switch; no `VITE_*`
-**Deployment status:** image `quay.io/meddleware-org/landing` 0.0.11 serving `meddleware.co.uk` (`sha256:392c4b1b…`, deployed 2026-10-09; live page links the five live tool hosts, the dashboard and the docs). The package is not on npm (confirmed 404 again 2026-10-10).
-**Review date:** 2026-10-03 (first pass) · re-verified 2026-10-09 · fixes 2026-10-18 (0.0.12)
+**Deployment status:** image `quay.io/meddleware-org/landing` 0.0.12 serving `meddleware.co.uk` (`sha256:8a7f57af…a286`; release tag `v0.0.12` = `6ceec28`; released, signature verified and deployed 2026-10-18, rollout succeeded; 0.0.11 `sha256:392c4b1b…` was deployed 2026-10-09; the narrowed CSP (`connect-src 'self'`, `img-src 'self' data:`, no `worker-src`) is live (header re-read 2026-10-18) and the live page produced zero console errors and zero CSP violations in headless Chromium, Cloudflare edge scripts included; live page links the five live tool hosts, the dashboard and the docs). The package is not on npm (confirmed 404 again 2026-10-10).
+**Review date:** 2026-10-03 (first pass) · re-verified 2026-10-09 · fixes 2026-10-18 (0.0.12, released and deployed)
 **Reviewer:** Internal review
 **Severity ceiling:** Low — a static page with no wallet, chain access, forms or user data.
-**Status:** re-verified 2026-10-09; F5, F6, F7, F9, F10 and F11 fixed in 0.0.12 (commit `ee6a1f2`, not yet released or deployed)
+**Status:** re-verified 2026-10-09; F5, F6, F7, F9, F10 and F11 fixed in 0.0.12 (commit `ee6a1f2`; released and deployed 2026-10-18, signature verified, rollout succeeded, zero console errors / CSP violations on the live page)
 
 ---
 
@@ -48,8 +48,8 @@ resolve. Fixed since the first pass:
   serves `/THIRD_PARTY_LICENSES` (HTTP 200 live), runs as an explicit `USER 65534:65534` on static-server
   0.1.7, and the pod sets `automountServiceAccountToken: false`.
 
-The newly applicable lens checks found defects that are **fixed in 0.0.12 (commit `ee6a1f2`; not yet released
-or deployed)**: **F5 (Low, RESOLVED)** the vestigial `public/_headers` (with `script-src 'unsafe-inline'`) and
+The newly applicable lens checks found defects that are **fixed in 0.0.12 (commit `ee6a1f2`; released and
+deployed 2026-10-18)**: **F5 (Low, RESOLVED)** the vestigial `public/_headers` (with `script-src 'unsafe-inline'`) and
 `CNAME` are deleted; **F6 (Info, RESOLVED)** unknown paths now answer a real 404 page (`NOT_FOUND_PAGE`);
 **F7 (Info, RESOLVED)** `scripts/check-csp-inline.mjs` fails the image build and CI on an inline script the CSP
 does not allow; **F9 (Info, RESOLVED)** the repository has unit tests and `node-ci.yml` runs `npm test`;
@@ -265,8 +265,7 @@ built home and 404 pages under exactly the Dockerfile's `ARG CSP` default (heade
 response) and fails on any `securitypolicyviolation`; a third test proves the policy is enforced (a
 cross-origin `fetch` is reported as a `connect-src` violation). With the probe green, 0.0.12 narrows
 `connect-src` to `'self'`, `img-src` to `'self' data:` and drops `worker-src` (falls back to `default-src
-'self'`). Not verifiable from here: Cloudflare's edge-injected scripts (same-origin `/cdn-cgi/`, nonce) behind the
-tunnel; the first deployment should be checked for console violations.
+'self'`). Cloudflare's edge-injected scripts (same-origin `/cdn-cgi/`, nonce) behind the tunnel could not be checked from the repository; **checked after the 2026-10-18 deployment:** the live page loaded in headless Chromium with zero console errors and zero CSP violations (Cloudflare edge scripts included) under the narrowed policy (`connect-src 'self'`).
 
 ### F12 — The cosign identity pins the repository, not the workflow
 
@@ -276,7 +275,7 @@ tunnel; the first deployment should be checked for console violations.
 **Impact:** a workflow added by someone with write access could sign an image the check would accept.
 **Remediation / evidence:** the repository is the signing boundary; anchoring to
 `docker-publish.yml@refs/tags/v*` is a `COSIGN_IDENTITY_REGEXP` override in the workspace script. The
-deployed digest verified 2026-10-09 (16/16).
+deployed digests verified 2026-10-09 (0.0.11) and 2026-10-18 (0.0.12), 16/16 both times; the 2026-10-18 run used the workflow-anchored identity `docker-publish.yml@refs/tags/v*`, which is narrower than the repository-wide check this finding describes (disposition left to the workspace audit).
 
 ### F13 — Self-hosted registry mirror and registry credentials
 
@@ -356,15 +355,15 @@ no npm release path; no test-only build mode exists; no job spends real funds.
 
 ### B.VUE-1 Hosting headers
 
-Live headers on `meddleware.co.uk`, read 2026-10-10: `Content-Security-Policy` (`default-src 'self'`,
+Live headers on `meddleware.co.uk`, read 2026-10-10 (0.0.11; the 0.0.12 reading of 2026-10-18 is below): `Content-Security-Policy` (`default-src 'self'`,
 `script-src 'self'` with a per-response nonce, `style-src 'self' 'unsafe-inline'`, `img-src 'self' data:
 blob: https:`, `connect-src 'self' https:`, `worker-src 'self' blob:`, `object-src 'none'`, `base-uri
 'self'`, `form-action 'self'`, `frame-ancestors 'self'`, `upgrade-insecure-requests`),
 `Strict-Transport-Security` (1 year, includeSubDomains), `X-Content-Type-Options: nosniff`,
 `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `X-Frame-Options: SAMEORIGIN`.
-The CSP is static-server's (`CONTENT_SECURITY_POLICY` from the `CSP` build argument). From 0.0.12 (not yet
-deployed) `img-src` is `'self' data:`, `connect-src` is `'self'` and `worker-src` is dropped (F11; the live header
-above is 0.0.11). There is one hosting path; the static-host `public/_headers` is gone (F5). `'unsafe-inline'`
+The CSP is static-server's (`CONTENT_SECURITY_POLICY` from the `CSP` build argument). From 0.0.12 (deployed 2026-10-18)
+`img-src` is `'self' data:`, `connect-src` is `'self'` and `worker-src` is dropped (F11; the header listing above is the 0.0.11 reading of
+2026-10-10). **Re-read on 0.0.12 on 2026-10-18 with `curl -I`:** HTTP 200; CSP `default-src 'self'; script-src 'self' 'nonce-…'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests` (no `worker-src`), HSTS (1 year, includeSubDomains), `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: SAMEORIGIN`. There is one hosting path; the static-host `public/_headers` is gone (F5). `'unsafe-inline'`
 in the policy is for styles only; the page emits no inline script and `scripts/check-csp-inline.mjs` fails the
 build if that changes (F7). Unknown paths answer `404.html` with status 404 (F6). No wasm, so no
 `'wasm-unsafe-eval'`. Framing is `'self'` only; the page is not embedded.
@@ -412,8 +411,8 @@ test-hook scan to run.
 
 ### pre-testnet
 
-- [x] deployed with digest pinning; CSP and HSTS verified; `SECURITY.md` present
-- [x] 0.0.11 deployed by digest; live headers, `/THIRD_PARTY_LICENSES` and links probed (2026-10-10)
+- [x] deployed with digest pinning; CSP and HSTS verified (0.0.12 re-read with `curl -I` on 2026-10-18); `SECURITY.md` present
+- [x] 0.0.12 deployed by digest (2026-10-18; 0.0.11 on 2026-10-09); live headers, `/THIRD_PARTY_LICENSES` and links probed (2026-10-10 on 0.0.11; headers re-read on 0.0.12 on 2026-10-18; console clean, see F11)
 - [x] image: digest-pinned bases, non-root, restricted pod, probes and limits, signed with SBOM and provenance, scanned before signing (F8)
 - [x] test-mode guards: not applicable (no test mode); signing UX and storage keys: not applicable (no wallet; colour mode only)
 - [x] every test project runs in CI — F9 (0.0.12, commit `ee6a1f2`: `npm test` in `node-ci.yml`; the Playwright gate is the `e2e` job)
@@ -495,4 +494,5 @@ None.
   to `'self'` after a CSP-violation probe in e2e) RESOLVED. New: the CI `image` job builds the Dockerfile and
   runs `scripts/smoke.sh` (passed locally with rootless podman). Section D: F5, F7, F9, F10 ticked; F12 (the
   workspace script) and F13 and the external review stay open (maintainer). To do on release: deploy the
-  0.0.12 digest and check the live headers and the browser console once (F11).
+  0.0.12 digest and check the live headers and the browser console once (F11) — done 2026-10-18, see the next entry.
+- 2026-10-18 — released and deployed (`v0.0.12` = `6ceec28`, `0.0.12@sha256:8a7f57afce5e8276f284bfc265e12b7f70c93e966f0265b1272d6e48b887a286`), verified live. Cosign keyless signature verified against the workflow-anchored identity (`verify-digests.sh` 16/16); rollout (`apply.sh landing`) succeeded. The narrowed CSP (`connect-src 'self'`, `img-src 'self' data:`, no `worker-src`) produced zero console errors and zero CSP violations on the live page in headless Chromium, Cloudflare edge scripts included (F11 closed in practice); the live header was re-read with `curl -I`. F12, F13 and the external review remain open (maintainer).
