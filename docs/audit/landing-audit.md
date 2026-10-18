@@ -7,19 +7,19 @@
 **Package manager / lockfile:** npm 11, committed (also copied into the image for SBOM tools)   **Module format:** ESM   **Publish model:** image only (`private: true` from 0.0.7; not on npm)
 **Runtime targets:** browser   **Peer dependencies:** none
 **Build tool:** vite 8.3.3, `@vitejs/plugin-vue` 6.0.9, vue 3.5.43, vue-router 5.3.1, vue-tsc 3.3.12, TypeScript 6.0.3
-**Hosting:** container image on static-server 0.1.7 (CSP and HSTS from the server); `public/_headers` and `public/CNAME` are vestigial static-host files that no host reads but static-server serves as plain files (F5)
+**Hosting:** container image on static-server 0.1.8 (CSP and HSTS from the server; unknown paths answer the 404 page with status 404); the vestigial `public/_headers` and `public/CNAME` were removed in 0.0.12 (F5)
 **Embedding hosts:** none (no exported view)
 **VITE_\* inventory:** none — `import.meta.env` is not read anywhere in `src/`
 **Images:** `quay.io/meddleware-org/landing:0.0.11@sha256:392c4b1b…520a` (Docker Hub mirror; cosign keyless, SPDX SBOM attestation, build provenance; cosign-verified 2026-10-09, `verify-digests.sh` 16/16)
-**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.7@sha256:2e227311…2379` (Go 1.26.9)
+**Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000` from 0.0.12 (0.1.7 `sha256:2e227311…2379` in the deployed 0.0.11)
 **Runtime user:** `USER 65534:65534`   **Runtime FS:** read-only root, no writable mounts
 **Deployed by:** `post-bootstrap/landing/overlays/default`; digest from `config/images.yaml`
 **Build args:** `CSP` only (the Content-Security-Policy string) — not secret, not a test switch; no `VITE_*`
 **Deployment status:** image `quay.io/meddleware-org/landing` 0.0.11 serving `meddleware.co.uk` (`sha256:392c4b1b…`, deployed 2026-10-09; live page links the five live tool hosts, the dashboard and the docs). The package is not on npm (confirmed 404 again 2026-10-10).
-**Review date:** 2026-10-03 (first pass) · re-verified 2026-10-09
+**Review date:** 2026-10-03 (first pass) · re-verified 2026-10-09 · fixes 2026-10-18 (0.0.12)
 **Reviewer:** Internal review
 **Severity ceiling:** Low — a static page with no wallet, chain access, forms or user data.
-**Status:** re-verified 2026-10-09
+**Status:** re-verified 2026-10-09; F5, F6, F7, F9, F10 and F11 fixed in 0.0.12 (commit pending, not yet released or deployed)
 
 ---
 
@@ -48,15 +48,16 @@ resolve. Fixed since the first pass:
   serves `/THIRD_PARTY_LICENSES` (HTTP 200 live), runs as an explicit `USER 65534:65534` on static-server
   0.1.7, and the pod sets `automountServiceAccountToken: false`.
 
-The newly applicable lens checks found defects that are **not yet fixed** (content and workflow changes
-are outside this alignment; each is a one- or two-line change for the next patch release):
-**F5 (Low, DEFERRED)** a vestigial `public/_headers` (with `script-src 'unsafe-inline'`) and `CNAME` are
-shipped and served as files; **F6 (Info, DEFERRED)** unknown paths answer 200 with the page shell;
-**F7 (Info, DEFERRED)** no build-time inline-script check; **F9 (Info, DEFERRED)** `node-ci.yml` has no
-`npm test` step (the page has no tests today, so nothing is skipped); **F10 (Info, DEFERRED)** contrast of
-the page's own dimmed links is not browser-checked. Accepted or maintainer items: **F11** blanket
-`connect-src https:` and **F12** the cosign identity pins the repository not the workflow (ACCEPTED-RISK);
-**F13** registry mirror and credential inventory (DEFERRED, maintainer).
+The newly applicable lens checks found defects that are **fixed in 0.0.12 (commit pending; not yet released
+or deployed)**: **F5 (Low, RESOLVED)** the vestigial `public/_headers` (with `script-src 'unsafe-inline'`) and
+`CNAME` are deleted; **F6 (Info, RESOLVED)** unknown paths now answer a real 404 page (`NOT_FOUND_PAGE`);
+**F7 (Info, RESOLVED)** `scripts/check-csp-inline.mjs` fails the image build and CI on an inline script the CSP
+does not allow; **F9 (Info, RESOLVED)** the repository has unit tests and `node-ci.yml` runs `npm test`;
+**F10 (Info, RESOLVED)** the browser axe run found a real defect (the dimmed footer links reached 4.12:1 in the
+dark footer) and it is fixed and pinned in CI for the home and 404 pages in every theme x season; **F11
+(Info, RESOLVED)** the CSP's `connect-src`, `img-src` and `worker-src` are narrowed to `'self'` after a browser
+probe. Still open: **F12** the cosign identity pins the repository not the workflow (ACCEPTED-RISK, workspace
+script); **F13** registry mirror and credential inventory (DEFERRED, maintainer).
 
 The severity ceiling stays Low.
 
@@ -79,16 +80,17 @@ Critical / High / Medium / Low / Info / Positive.
 
 ## Scope
 
-- **In scope (0.0.11):** `src/**`, `index.html`, `public/` (including `_headers`, `CNAME`), `vite.config.ts`,
+- **In scope (0.0.12):** `src/**`, `index.html`, `public/`, `vite.config.ts`,
   `Dockerfile`, `.dockerignore`, workflows, `.github/{audit-gate.mjs,audit-allowlist.json,dependabot.yml}`,
-  `scripts/third-party-licenses.mjs`, `SECURITY.md`, `CLAUDE.md`, `package.json`, `post-bootstrap/landing/`
+  `scripts/{third-party-licenses.mjs,check-csp-inline.mjs,smoke.sh}`, `tests/`, `e2e/`, `404.html`, `SECURITY.md`, `CLAUDE.md`, `package.json`, `post-bootstrap/landing/`
   (read-only).
 - **Out of scope:** `@meddleware/ui`, `@meddleware/design-tokens`, static-server (own audits).
 - **Environment (2026-10-09):** `vue-tsc --noEmit` (clean); audit gate (1 allowlisted advisory, 0 open);
   the built `dist/` read (one script, an external module; no source maps; `THIRD_PARTY_LICENSES` 250 KB);
   `npm pack --dry-run` (34 files; the package is `private`); live headers, `/THIRD_PARTY_LICENSES`,
-  `/_headers`, an unknown path and the links of `meddleware.co.uk` (HTTP reads 2026-10-10). No unit tests
-  (static content; `package.json` has no `test` script). Earlier (2026-10-03): stylelint, eslint
+  `/_headers`, an unknown path and the links of `meddleware.co.uk` (HTTP reads 2026-10-10). 0.0.12 (2026-10-18): `vue-tsc`, the three linters, vitest (12), Playwright + axe and CSP
+  probe (19), `check:licenses`, `check:csp`, the audit gate and `scripts/smoke.sh` against the image built with
+  rootless podman. Earlier (2026-10-03): stylelint, eslint
   (+ vuejs-a11y), html-validate and the production build green.
 
 ## Findings
@@ -140,7 +142,7 @@ live header adds only static-server's per-response nonce (for Cloudflare's scrip
 
 ### F5 — A vestigial `_headers` file is shipped and served
 
-**Severity:** Low   **Disposition:** DEFERRED (next patch release; delete `public/_headers` and `public/CNAME`)
+**Severity:** Low   **Disposition:** RESOLVED (0.0.12, commit pending)
 **Where:** `public/_headers`, `public/CNAME` (copied into `dist/` by Vite and into the image)
 **Issue:** `_headers` is a static-host (Cloudflare Pages / Netlify) file: it sets `script-src 'self'
 'unsafe-inline'` (the VUE lens forbids `'unsafe-inline'` for scripts), `X-Frame-Options: DENY`, a
@@ -152,12 +154,14 @@ file: `https://meddleware.co.uk/_headers` answers 200 `text/plain` (read 2026-10
 **Impact:** no browser enforces the file, so no weaker policy is in effect; the risk is a reviewer or an
 operator reading it as the site's policy, and the page advertising a configuration it does not use. A
 future move to a static host would silently apply the weaker script policy.
-**Remediation / evidence:** delete both files; the headers are the image's `CSP` argument and
-static-server's fixed set (B.VUE-1). Read: `public/_headers`, `public/CNAME`, the live `/_headers`.
+**Remediation / evidence:** both files are deleted (nothing referenced them: GitHub Pages and Cloudflare Pages
+are not used; the only mentions were in this audit); the headers are the image's `CSP` argument and
+static-server's fixed set (B.VUE-1). `scripts/smoke.sh` requests `/_headers` and `/CNAME` against the built
+image and requires 404 (run 2026-10-18 with rootless podman: passed; the CI `image` job runs it).
 
 ### F6 — Unknown paths answer 200 with the page shell
 
-**Severity:** Info   **Disposition:** DEFERRED (next patch release; a 404 page)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
 **Where:** `Dockerfile` (`SPA_FALLBACK=true`), `post-bootstrap/landing/base/deployment.yaml`,
 `src/main.ts` (one route, no catch-all)
 **Issue:** the image serves every unknown path with `index.html` and status 200 (live `/no/such` answers
@@ -165,12 +169,16 @@ static-server's fixed set (B.VUE-1). Read: `public/_headers`, `public/CNAME`, th
 main area. The page has one route, so the fallback buys nothing. This is the class of docs audit F11.
 **Impact:** mistyped or retired links to `meddleware.co.uk/...` look healthy to crawlers and link
 checkers; no security effect.
-**Remediation / evidence:** add a `public/404.html`, drop `SPA_FALLBACK`, and set `NOT_FOUND_PAGE=/404.html`
-(static-server 0.1.4+, as the docs and dev sites do), or add a not-found route and accept the 200.
+**Remediation / evidence:** `404.html` is a second Vite entry that runs the same app (so the page keeps the
+header, footer, themes and hashed assets); `src/routes.ts` adds a catch-all `NotFoundView`; the Dockerfile drops
+`SPA_FALLBACK` and sets `NOT_FOUND_PAGE=/404.html` (static-server 0.1.8, as the docs site does). Pinned by
+`tests/routes.test.ts` (every path but `/` resolves to the not-found view), by `scripts/smoke.sh` (unknown
+route: status 404 with the page shell and the security headers; passed against the built image 2026-10-18) and
+by `e2e/contrast.spec.ts` / `e2e/csp.spec.ts` over `/404.html`.
 
 ### F7 — No build-time check that every inline script is covered by the CSP
 
-**Severity:** Info   **Disposition:** DEFERRED (next patch release; copy `check-csp-inline.mjs`)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
 **Where:** `Dockerfile`; `scripts/`
 **Issue:** B.VUE-1 asks for a build-time check that fails on an inline script the policy does not allow.
 The policy is `script-src 'self'` (no hashes) and today's `dist/index.html` has exactly one script, the
@@ -178,8 +186,12 @@ external module `/assets/index-….js`. If a plugin or a dependency began emitti
 browser would block it and the page would break at runtime, not at build time. The docs and dev images run
 `scripts/check-csp-inline.mjs` for this.
 **Impact:** a silent breakage rather than a vulnerability (the CSP fails closed).
-**Remediation / evidence:** add the script and the `RUN node scripts/check-csp-inline.mjs "${CSP}" dist`
-line after the build. Read: `dist/index.html` (2026-10-09) and the Dockerfile.
+**Remediation / evidence:** `scripts/check-csp-inline.mjs` (same script as the status page) runs in the
+Dockerfile build stage (`RUN node scripts/check-csp-inline.mjs "${CSP}" dist`) and in CI (`npm run check:csp`
+after the build); it also fails if `script-src` allows `'unsafe-inline'` or `dist/` has no HTML. Pinned by
+`tests/check-csp-inline.test.ts` (external module passes; an inline script, an `'unsafe-inline'` policy and an
+empty `dist/` fail; a listed sha256 passes; the Dockerfile default is read). Run on the 0.0.12 `dist/` (4 HTML
+files): passed.
 
 ### F8 — Image release gate, scan, notices and runtime user
 
@@ -206,19 +218,21 @@ scan of the Dockerfile (the filesystem scan includes misconfiguration checks).
 
 ### F9 — The CI workflow has no `npm test` step
 
-**Severity:** Info   **Disposition:** DEFERRED (one line in `node-ci.yml`, when the page gains a test)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
 **Where:** `.github/workflows/node-ci.yml`; `docker-publish.yml` `verify` calls it
 **Issue:** `node-ci.yml` has no `npm test` step, and the comment in `docker-publish.yml` ("type-check, lint,
 tests, build, licences") overstates what the release runs.
 **Impact:** none today: `package.json` defines no `test` script and the repository has no test files, so
 no test is skipped. The first test added would not run in CI or in the release gate (TS lens: every test
 project that exists runs in CI).
-**Remediation / evidence:** add `- run: npm test --if-present` to `node-ci.yml` and correct the comment.
-Verified by reading both workflows and `package.json` 2026-10-09.
+**Remediation / evidence:** `package.json` has `"test": "vitest run"` (the F7 check and the route table are the
+first tests: 12 tests) and `node-ci.yml` runs `npm test` (no `--if-present`); the release calls that workflow, so
+the comment in `docker-publish.yml` is now accurate. The Playwright suite (`npm run test:e2e`) runs in its own
+`e2e` job of the same workflow.
 
 ### F10 — Contrast of the page's own text is not checked in a browser
 
-**Severity:** Info   **Disposition:** DEFERRED (next patch release; an axe run of the built page)
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending)
 **Where:** `src/App.vue` (`.header-nav__link` opacity 0.8, `.footer-link` opacity 0.65), `src/components/*.vue`
 (`--muted` text, `opacity: 0.85` hover states)
 **Issue:** the VUE lens requires WCAG AA contrast in every theme × season, checked in a real browser (axe)
@@ -227,13 +241,17 @@ dimmed links and muted text have no browser check, and opacity is applied on top
 The running-text link in the features subtitle keeps the default underline (`main.css`).
 **Impact:** unknown; possible low-contrast dimmed footer and header links in some theme/season. All the
 information is also in the heading and card text.
-**Remediation / evidence:** load the built page in Playwright with `@axe-core/playwright` for each theme ×
-season (as `ui/e2e/contrast.spec.ts` does for the gallery) and replace opacity dimming with tokens if it
-fails. Not run for this pass.
+**Remediation / evidence:** `e2e/contrast.spec.ts` loads the built home page and the 404 page in Chromium and
+runs axe (WCAG 2.2 AA and best-practice tags) for light/dark x spring/summer/autumn/winter (16 tests). The
+first run **found a real defect**: the three footer links reached only 4.12:1 (`#7f746f` on `#16110f`, the
+dark footer) because `.footer-link` dimmed the footer's muted token with `opacity: 0.65`. 0.0.12 drops the
+dimming (the hover state is an underline); all 16 tests pass. The header links (`opacity: 0.8`) pass and are
+kept. Wired into CI as the `e2e` job (Chromium installed with `npx playwright install --with-deps chromium`,
+the same pattern as `walrus-relay`; passed locally 2026-10-18, 19 tests including F11's).
 
 ### F11 — `connect-src` allows any https origin
 
-**Severity:** Info   **Disposition:** ACCEPTED-RISK
+**Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit pending; was ACCEPTED-RISK)
 **Where:** `Dockerfile` (`CSP` argument); live header read 2026-10-10
 **Issue:** `connect-src 'self' https:` and `img-src 'self' data: blob: https:` are blanket allowances,
 copied from the application images; the Dockerfile comment justifies them with operator-configured RPC and
@@ -242,8 +260,13 @@ colour mode).
 **Impact:** an injected script could send data to any https host. Script injection is the prerequisite,
 and `script-src 'self'` with a nonce, no inline script and no `v-html`/`eval` (F4) is the control on that;
 the page holds no secret or session.
-**Remediation / evidence:** accepted for now; `connect-src 'self'` and a narrower `img-src` are a
-suggestion that needs a browser probe first (not done).
+**Remediation / evidence:** the browser probe the finding asked for now exists: `e2e/csp.spec.ts` loads the
+built home and 404 pages under exactly the Dockerfile's `ARG CSP` default (header injected into the document
+response) and fails on any `securitypolicyviolation`; a third test proves the policy is enforced (a
+cross-origin `fetch` is reported as a `connect-src` violation). With the probe green, 0.0.12 narrows
+`connect-src` to `'self'`, `img-src` to `'self' data:` and drops `worker-src` (falls back to `default-src
+'self'`). Not verifiable from here: Cloudflare's edge-injected scripts (same-origin `/cdn-cgi/`, nonce) behind the
+tunnel; the first deployment should be checked for console violations.
 
 ### F12 — The cosign identity pins the repository, not the workflow
 
@@ -275,9 +298,9 @@ verifies signatures, so it would not run).
 | I3 | Bound links pass a scheme check | `ToolCard` | source | HOLDS (F3) |
 | I4 | The only release path is the signed image | `private: true`; image workflow | `package.json`; workflows | HOLDS (F2) |
 | I5 | The release ships only what full CI accepted, scanned and signed | `docker-publish.yml` `verify` → `node-ci.yml`; Trivy before cosign | workflow read 2026-10-09 | HOLDS (F8) |
-| I6 | The served policy is the one the audit describes | image `CSP` argument + static-server; `public/_headers` is a second, weaker description | live header read 2026-10-10; the live `/_headers` file | HOLDS for the policy in force — GAP for the stray file, see F5 |
-| I7 | The unit tests run on every change and every release | none (`node-ci.yml` has no test step) | none; the page has no tests | GAP (nothing to run today) — see F9 |
-| I8 | The page emits no inline script (the CSP allows none) | `script-src 'self'` in the image; Vite emits one external module script | `dist/index.html` read by hand; no build-time check | HOLDS (code-only) — F7 |
+| I6 | The served policy is the one the audit describes | image `CSP` argument + static-server; no second description (`public/_headers` removed) | live header read 2026-10-10 (0.0.11); `smoke.sh` on the 0.0.12 image; `e2e/csp.spec.ts` | HOLDS (F5, F11) |
+| I7 | The unit tests run on every change and every release | `node-ci.yml` `npm test` (the release calls it) | workflow read 2026-10-18 | HOLDS (F9) |
+| I8 | The page emits no inline script (the CSP allows none) | `script-src 'self'` in the image; `scripts/check-csp-inline.mjs` in the Dockerfile and CI | `tests/check-csp-inline.test.ts`; check run on `dist/` | HOLDS (F7) |
 
 ### Lens categories
 
@@ -286,9 +309,9 @@ verifies signatures, so it would not run).
 | TS | Compiler strictness, assertions, validation, money, network I/O, encoding, dynamic code | HOLDS — `strict: true` (`vue-tsc --noEmit` in CI); `noUncheckedIndexedAccess` not enabled (the page parses no untrusted data); `skipLibCheck: true` hides nothing in `src/`; no `any`, `!`, `eval`, `fetch` or amounts in `src/` |
 | TS | Supply chain | HOLDS — `npm ci`, audit gate in CI (1 allowlisted, 0 open), lockfile, Dependabot weekly and grouped |
 | TS | Publishing / packaging | HOLDS (F2) — `private: true`; no `files`/`exports` to check |
-| TS | Test projects in CI | N/A today — the page has no tests; the CI workflow has no test step (F9) |
+| TS | Test projects in CI | HOLDS (F9) — vitest (`npm test`) and Playwright (`npm run test:e2e`) both run in `node-ci.yml` |
 | VUE | Untrusted rendering | HOLDS (F3, F4) — no untrusted input; the one dynamic `:href` passes `safeHref`; no `v-html` |
-| VUE | Colour & links | not verified in a browser (F10) — the running-text link keeps the default underline; header and footer links are dimmed with `opacity` |
+| VUE | Colour & links | HOLDS (F10) — axe in Chromium over the home and 404 pages, every theme x season, no violation; the running-text link keeps the default underline; footer links no longer dim |
 | VUE | Build-time configuration | HOLDS — no `VITE_*`; no `.env` file is read or committed; ids: none (no chain access) |
 | VUE | Test hooks | N/A — no test mode, mock or `window.__*` hook exists |
 | VUE | Signing UX, shared-wallet state | N/A — no wallet |
@@ -296,7 +319,7 @@ verifies signatures, so it would not run).
 | VUE | Lazy boundaries | N/A — no heavy SDK or wasm |
 | VUE | Dual app / library | N/A — the app exports no view |
 | VUE | Estimates, chain-access layering | N/A — no chain logic |
-| IMG | Base images, build context, reproducible build, no secrets, runtime user, scan, SBOM and notices | HOLDS (F8) — digest-pinned `node:24-slim` and static-server 0.1.7; `.dockerignore` excludes `node_modules`, `dist`, `.git`, `.github` and `.env*.local`; `npm ci`; the only `ARG` is the public `CSP`; Trivy before cosign; lockfile in the image; `/THIRD_PARTY_LICENSES` served |
+| IMG | Base images, build context, reproducible build, no secrets, runtime user, scan, SBOM and notices | HOLDS (F8) — digest-pinned `node:24-slim` and static-server 0.1.8 (0.0.12); `.dockerignore` excludes `node_modules`, `dist`, `.git`, `.github` and `.env*.local`; `npm ci`; the only `ARG` is the public `CSP`; Trivy before cosign; lockfile in the image; `/THIRD_PARTY_LICENSES` served; the CI `image` job builds the Dockerfile and runs `scripts/smoke.sh` against the container (read-only, non-root, no capabilities) |
 | IMG | Verification command | GAP accepted — the identity pins the repository (F12) |
 | IMG | Deployment pinning | HOLDS — digest in `config/images.yaml` and the overlay; the base manifest's tag (`0.1.0`) is overridden by the overlay digest and is cosmetic |
 
@@ -306,10 +329,10 @@ verifies signatures, so it would not run).
 
 | Dependency | Pinned version | Liveness dependency? | CVE / audit status | Notes |
 | --- | --- | --- | --- | --- |
-| `@meddleware/ui` / `design-tokens` | `^0.1.31` / `^0.1.9` (installed 0.1.31 / 0.1.9) | rendering | clean | latest published |
+| `@meddleware/ui` / `design-tokens` | `^0.1.31` / `^0.1.10` (installed 0.1.31 / 0.1.10) | rendering | clean | latest published |
 | `vue`, `vue-router` | `^3.5.43`, `^5.3.1` (installed 3.5.43, 5.3.1) | rendering | clean | ADR-0001 matrix: vue matches the workspace baseline |
-| `vite`, `@vitejs/plugin-vue`, `vue-tsc`, `typescript` | `^8.3.3`, `^6.0.9`, `~3.3.12`, `^6.0.0` (installed 8.3.3, 6.0.9, 3.3.12, 6.0.3) | build | clean | `typescript` is a caret range (siblings use `~6.0.0`); it does not admit 7, which is deferred (decision); no vitest, no `@mysten/*` |
-| `static-server` / `node:24-slim` | 0.1.7 / digest-pinned | runtime / build | Trivy at release (F8); Go 1.26.9 | — |
+| `vite`, `@vitejs/plugin-vue`, `vue-tsc`, `typescript` | `^8.3.3`, `^6.0.9`, `~3.3.12`, `^6.0.0` (installed 8.3.3, 6.0.9, 3.3.12, 6.0.3) | build | clean | `typescript` is a caret range (siblings use `~6.0.0`); it does not admit 7, which is deferred (decision); `vitest` ~5.0.3, `@playwright/test` ~1.63.0 and `@axe-core/playwright` ^4.14.0 are dev-only; no `@mysten/*` |
+| `static-server` / `node:24-slim` | 0.1.8 / digest-pinned | runtime / build | Trivy at release (F8) | — |
 | dev tooling | lockfile | no | GHSA-vfj7-8cjw-p6xm allowlisted to 2027-01-01 | TS lens B.TS-3 |
 
 Install-time code (TS B.TS-2): the lockfile has one lifecycle script, `fsevents` (dev, optional, macOS
@@ -326,8 +349,8 @@ only); no `allowScripts`, no `overrides`, no `prepare`/`postinstall` in `package
 
 CI & release integrity: actions pinned by SHA (workflows read 2026-10-09); explicit `permissions:` per
 workflow and job (`id-token`/`attestations` only on the signing job); tag-gated image release (`v*`);
-image release = full CI via `workflow_call` + Trivy + cosign + SPDX SBOM attestation + provenance, no
-`continue-on-error` on the public path (F8; the CI workflow has no test step, F9); `npm ci` everywhere;
+image release = full CI via `workflow_call` (including unit tests, the Playwright gate and the container probe) + Trivy + cosign + SPDX SBOM attestation + provenance, no
+`continue-on-error` on the public path (F8, F9); `npm ci` everywhere;
 audit gate in CI; Dependabot weekly and grouped for npm, Docker and Actions (`.github/dependabot.yml`);
 no npm release path; no test-only build mode exists; no job spends real funds.
 
@@ -339,19 +362,19 @@ blob: https:`, `connect-src 'self' https:`, `worker-src 'self' blob:`, `object-s
 'self'`, `form-action 'self'`, `frame-ancestors 'self'`, `upgrade-insecure-requests`),
 `Strict-Transport-Security` (1 year, includeSubDomains), `X-Content-Type-Options: nosniff`,
 `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `X-Frame-Options: SAMEORIGIN`.
-The CSP is static-server's (`CONTENT_SECURITY_POLICY` from the `CSP` build argument). There is one
-hosting path, but the repository also holds a static-host `public/_headers` (F5) whose policy differs
-(`'unsafe-inline'` scripts, `DENY` framing) and which no host applies. `'unsafe-inline'` in the live policy
-is for styles only; the page emits no inline script (F7 for the missing build check). The blanket `https:`
-in `connect-src` and `img-src` is F11. No wasm, so no `'wasm-unsafe-eval'`. Framing is `'self'` only; the
-page is not embedded.
+The CSP is static-server's (`CONTENT_SECURITY_POLICY` from the `CSP` build argument). From 0.0.12 (not yet
+deployed) `img-src` is `'self' data:`, `connect-src` is `'self'` and `worker-src` is dropped (F11; the live header
+above is 0.0.11). There is one hosting path; the static-host `public/_headers` is gone (F5). `'unsafe-inline'`
+in the policy is for styles only; the page emits no inline script and `scripts/check-csp-inline.mjs` fails the
+build if that changes (F7). Unknown paths answer `404.html` with status 404 (F6). No wasm, so no
+`'wasm-unsafe-eval'`. Framing is `'self'` only; the page is not embedded.
 
 ### B.VUE-2 / B.IMG Build inputs and artifacts
 
 Production sourcemaps are not emitted (Vite default; `dist/` has no `.map`); no `VITE_*` and no test mode.
-`node:24-slim@sha256:0e0ff40c…` builder and `static-server:0.1.7@sha256:2e227311…` runtime, both
+`node:24-slim@sha256:0e0ff40c…` builder and `static-server:0.1.8@sha256:e32cf42b…` runtime (0.0.12), both
 digest-pinned (Dependabot Docker group); `npm ci`; `.dockerignore` excludes local installs, build output,
-VCS data and every `.env*.local`; `npm run build && npm run licenses` run in the build stage; the runtime
+VCS data and every `.env*.local`; `npm run build && npm run licenses` and the inline-script check run in the build stage; the runtime
 stage copies `dist` and the lockfile only (the `docs/` tree, including this audit, never reaches it);
 `USER 65534:65534`; the only `ARG` is the public `CSP`; the deployment is read-only root, `runAsNonRoot`
 uid 65534, no privilege escalation, all capabilities dropped, `RuntimeDefault` seccomp,
@@ -361,13 +384,16 @@ verified 2026-10-09 (F12). Not run: a Trivy *config* scan of the Dockerfile on i
 
 ## Section C — Test-coverage & hermetic/live split
 
-### C.1 Coverage grade — N/A (static content)
+### C.1 Coverage grade — adequate for static content
 
-No unit tests exist (framework: none; `package.json` has no `test` script), and no Playwright suite. The
-gates are `vue-tsc`, three linters (stylelint, eslint with vuejs-accessibility, html-validate over the
-SFC templates), the build, the licence-notice check and a Trivy filesystem scan (vulnerabilities,
-misconfiguration, secrets), all in `node-ci.yml`. The production build runs from a clean checkout in CI.
-There is no test mode, so there is no test-hook scan to run.
+Unit tests (vitest, `tests/`, 12 tests): the build-time inline-script check (six cases) and the route table
+(`/` is the home view, every other path the not-found view). Playwright (`e2e/`, 19 tests, Chromium): axe over
+the built home and 404 pages in every theme x season, and a load of both under the served CSP with no
+violation (plus a test that the policy is enforced). The container probe `scripts/smoke.sh` runs the built
+image read-only and non-root. Other gates: `vue-tsc`, three linters (stylelint, eslint with
+vuejs-accessibility, html-validate over the SFC templates), the build, the licence-notice check, the
+inline-script check and a Trivy filesystem scan, all in `node-ci.yml`. There is no test mode, so there is no
+test-hook scan to run.
 
 ### C.2 Hermetic vs. live paths
 
@@ -375,7 +401,7 @@ There is no test mode, so there is no test-hook scan to run.
 | --- | --- | --- | --- |
 | Build and lint | yes | — | CI |
 | Served page, links, headers, notices | no | deployment | live probe 2026-10-09/10 (headers, `/THIRD_PARTY_LICENSES` 200, tool hosts 200, `sui-dao.` unresolved) |
-| Contrast of the page in each theme and season | no | browser run | F10 |
+| Contrast of the page in each theme and season | yes (local Chromium) | — | `e2e/contrast.spec.ts` in CI (F10) |
 
 ## Section D — Deployment-readiness gates
 
@@ -390,16 +416,16 @@ There is no test mode, so there is no test-hook scan to run.
 - [x] 0.0.11 deployed by digest; live headers, `/THIRD_PARTY_LICENSES` and links probed (2026-10-10)
 - [x] image: digest-pinned bases, non-root, restricted pod, probes and limits, signed with SBOM and provenance, scanned before signing (F8)
 - [x] test-mode guards: not applicable (no test mode); signing UX and storage keys: not applicable (no wallet; colour mode only)
-- [ ] every test project runs in CI — F9 (nothing to run today; next patch)
-- [ ] inline scripts checked at build time — F7 (next patch)
-- [ ] only one description of the served headers exists — F5 (next patch)
+- [x] every test project runs in CI — F9 (0.0.12, commit pending: `npm test` in `node-ci.yml`; the Playwright gate is the `e2e` job)
+- [x] inline scripts checked at build time — F7 (0.0.12, commit pending: `scripts/check-csp-inline.mjs` in the Dockerfile and CI; `tests/check-csp-inline.test.ts`)
+- [x] only one description of the served headers exists — F5 (0.0.12, commit pending: `_headers` and `CNAME` deleted; `smoke.sh` requires 404 for both)
 
 ### pre-mainnet
 
 
 - [x] no npm release path (`private`; package absent from npm, 2026-10-08 and 2026-10-10)
 - [x] CSP and HSTS on the one hosting path (B.VUE-1); no wallet events or irreversible actions to guard (VUE-M4–M6 not applicable)
-- [ ] contrast checked in a browser in every theme × season — F10 (next patch)
+- [x] contrast checked in a browser in every theme × season — F10 (0.0.12, commit pending: `e2e/contrast.spec.ts`, 16 tests; found and fixed the footer links at 4.12:1)
 - [ ] registry credential inventory and rotation (F13) — `OPERATOR_TASKS.md` "Image registry credentials"
 - [ ] external review — maintainer item (`OPERATOR_TASKS.md` "Funding, grants and an external audit")
 
@@ -417,18 +443,17 @@ There is no test mode, so there is no test-hook scan to run.
 
 ## Normative requirements (MUST / MUST NOT)
 
-- **TS-M1–TS-M9** — hold where applicable (TS-M9: no `@mysten/*` peer; the lens's rule that every test
-  project runs in CI is vacuous today, F9).
+- **TS-M1–TS-M9** — hold where applicable (TS-M9: no `@mysten/*` peer; every test project
+  runs in CI, F9).
 - **VUE-M1, M2, M3, M7, M9** — hold (no untrusted input; no `VITE_*`; no test mode; no storage of its own;
   no embedded library); **VUE-M4–M6** not applicable (no wallet); **VUE-M8** holds on the one hosting path
-  (B.VUE-1), with the stray `_headers` file as F5; the *Colour & links* category is unverified (F10).
+  (B.VUE-1; F5); the *Colour & links* category is verified in a browser (F10).
 - **IMG-M1–IMG-M8** — hold; IMG-M8's verification command pins the repository only (F12).
 
 ## Implementation suggestions (SHOULD / MAY)
 
 - MAY derive the tool list from one shared source with the dashboard, so a retired tool disappears
   from both at once.
-- SHOULD tighten `connect-src` to `'self'` after a browser probe (F11).
 - MAY run a Trivy configuration scan of the Dockerfile on its own in CI.
 
 ## Open questions (`OQ#`)
@@ -462,3 +487,12 @@ None.
   ACCEPTED-RISK), F12 (cosign identity; ACCEPTED-RISK), F13 (mirror and credentials; DEFERRED,
   maintainer). Section D ticked with evidence; unticked: the next-patch items and the mainnet/maintainer
   items.
+- 2026-10-18 — fix wave for 0.0.12 (commit pending; not released or deployed): dependencies to design-tokens
+  ^0.1.10 and static-server 0.1.8 (`sha256:e32cf42b…4000`, verified against quay.io). F5 (`_headers`, `CNAME`
+  deleted), F6 (real 404 page via `NOT_FOUND_PAGE`), F7 (inline-script check in the Dockerfile and CI), F9
+  (vitest and `npm test` in CI), F10 (Playwright + axe over the home and 404 pages, every theme x season; the
+  first run found the footer links at 4.12:1 and the opacity dimming was removed) and F11 (the CSP narrowed
+  to `'self'` after a CSP-violation probe in e2e) RESOLVED. New: the CI `image` job builds the Dockerfile and
+  runs `scripts/smoke.sh` (passed locally with rootless podman). Section D: F5, F7, F9, F10 ticked; F12 (the
+  workspace script) and F13 and the external review stay open (maintainer). To do on release: deploy the
+  0.0.12 digest and check the live headers and the browser console once (F11).
