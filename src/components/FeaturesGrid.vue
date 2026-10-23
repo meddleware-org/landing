@@ -7,14 +7,14 @@ const tools = [
     title: 'Walrus Storage',
     description:
       'Decentralised, tamper-proof blob storage on Sui. Upload, manage, and extend the lifetime of blobs — no backend required.',
-    href: 'https://sui-walrus.meddleware.co.uk',
+    href: 'https://sui-walrus-storage.meddleware.co.uk',
   },
   {
     icon: '🔒',
     title: 'Sealed Storage',
     description:
       'End-to-end encrypted blobs with Sui-based access control. Only holders of the matching on-chain NFT can decrypt.',
-    href: 'https://sui-seal.meddleware.co.uk',
+    href: 'https://sui-sealed-storage.meddleware.co.uk',
   },
   {
     icon: '🔐',
@@ -25,10 +25,10 @@ const tools = [
   },
   {
     icon: '🪙',
-    title: 'Token Deployer',
+    title: 'Token Issuance',
     description:
       'Deploy your own Sui coin fully client-side in under a minute. Your wallet signs, your keys — no intermediaries.',
-    href: 'https://sui-token-deployer.meddleware.co.uk',
+    href: 'https://sui-token-issuance.meddleware.co.uk',
   },
   {
     icon: '📊',

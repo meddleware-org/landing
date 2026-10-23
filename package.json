@@ -1,6 +1,6 @@
 {
-  "name": "@meddleware/landing",
-  "version": "0.0.13",
+  "name": "@meddleware/landing-site",
+  "version": "0.0.14",
   "private": true,
   "type": "module",
   "scripts": {

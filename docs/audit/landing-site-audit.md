@@ -1,7 +1,7 @@
 # Security Audit — `landing`
 
 **Classification:** Internal security review
-**Project:** `repos/landing` — the corporate landing page (`meddleware.co.uk`): hero, tool cards, links to the dashboard and docs
+**Project:** `repos/landing-site` — the corporate landing page (`meddleware.co.uk`): hero, tool cards, links to the dashboard and docs
 **Project type:** Vue app (static single-page site; no library entry)
 **Template:** AUDIT_TEMPLATE.md (2026-10-08) + AUDIT_TEMPLATE_TS.md (2026-10-08) + AUDIT_TEMPLATE_VUE.md (2026-10-08) + AUDIT_TEMPLATE_IMG.md (2026-10-08)
 **Package manager / lockfile:** npm 11, committed (also copied into the image for SBOM tools)   **Module format:** ESM   **Publish model:** image only (`private: true` from 0.0.7; not on npm)
@@ -10,12 +10,12 @@
 **Hosting:** container image on static-server 0.1.8 (CSP and HSTS from the server; unknown paths answer the 404 page with status 404); the vestigial `public/_headers` and `public/CNAME` were removed in 0.0.12 (F5)
 **Embedding hosts:** none (no exported view)
 **VITE_\* inventory:** none — `import.meta.env` is not read anywhere in `src/`
-**Images:** `quay.io/meddleware-org/landing:0.0.12@sha256:8a7f57afce5e8276f284bfc265e12b7f70c93e966f0265b1272d6e48b887a286` (Docker Hub mirror, same digest; cosign keyless signature verified 2026-10-18 against the workflow-anchored identity, `verify-digests.sh` 16/16; SPDX SBOM attestation, build provenance). Superseded 0.0.11 was `sha256:392c4b1b…520a`
+**Images:** `quay.io/meddleware-org/landing-site:0.0.12@sha256:8a7f57afce5e8276f284bfc265e12b7f70c93e966f0265b1272d6e48b887a286` (Docker Hub mirror, same digest; cosign keyless signature verified 2026-10-18 against the workflow-anchored identity, `verify-digests.sh` 16/16; SPDX SBOM attestation, build provenance). Superseded 0.0.11 was `sha256:392c4b1b…520a`
 **Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000` in 0.0.12 (the 0.0.11 image deployed 2026-10-09 was on 0.1.7 `sha256:2e227311…2379`)
 **Runtime user:** `USER 65534:65534`   **Runtime FS:** read-only root, no writable mounts
-**Deployed by:** `post-bootstrap/landing/overlays/default`; digest from `config/images.yaml`
+**Deployed by:** `post-bootstrap/landing-site/overlays/default`; digest from `config/images.yaml`
 **Build args:** `CSP` only (the Content-Security-Policy string) — not secret, not a test switch; no `VITE_*`
-**Deployment status:** image `quay.io/meddleware-org/landing` 0.0.12 serving `meddleware.co.uk` (`sha256:8a7f57af…a286`; release tag `v0.0.12` = `6ceec28`; released, signature verified and deployed 2026-10-18, rollout succeeded; 0.0.11 `sha256:392c4b1b…` was deployed 2026-10-09; the narrowed CSP (`connect-src 'self'`, `img-src 'self' data:`, no `worker-src`) is live (header re-read 2026-10-18) and the live page produced zero console errors and zero CSP violations in headless Chromium, Cloudflare edge scripts included; live page links the five live tool hosts, the dashboard and the docs). The package is not on npm (confirmed 404 again 2026-10-10).
+**Deployment status:** image `quay.io/meddleware-org/landing-site` 0.0.12 serving `meddleware.co.uk` (`sha256:8a7f57af…a286`; release tag `v0.0.12` = `6ceec28`; released, signature verified and deployed 2026-10-18, rollout succeeded; 0.0.11 `sha256:392c4b1b…` was deployed 2026-10-09; the narrowed CSP (`connect-src 'self'`, `img-src 'self' data:`, no `worker-src`) is live (header re-read 2026-10-18) and the live page produced zero console errors and zero CSP violations in headless Chromium, Cloudflare edge scripts included; live page links the five live tool hosts, the dashboard and the docs). The package is not on npm (confirmed 404 again 2026-10-10).
 **Review date:** 2026-10-03 (first pass) · re-verified 2026-10-09 · fixes 2026-10-18 (0.0.12, released and deployed)
 **Reviewer:** Internal review
 **Severity ceiling:** Low — a static page with no wallet, chain access, forms or user data.
@@ -82,7 +82,7 @@ Critical / High / Medium / Low / Info / Positive.
 
 - **In scope (0.0.12):** `src/**`, `index.html`, `public/`, `vite.config.ts`,
   `Dockerfile`, `.dockerignore`, workflows, `.github/{audit-gate.mjs,audit-allowlist.json,dependabot.yml}`,
-  `scripts/{third-party-licenses.mjs,check-csp-inline.mjs,smoke.sh}`, `tests/`, `e2e/`, `404.html`, `SECURITY.md`, `CLAUDE.md`, `package.json`, `post-bootstrap/landing/`
+  `scripts/{third-party-licenses.mjs,check-csp-inline.mjs,smoke.sh}`, `tests/`, `e2e/`, `404.html`, `SECURITY.md`, `CLAUDE.md`, `package.json`, `post-bootstrap/landing-site/`
   (read-only).
 - **Out of scope:** `@meddleware/ui`, `@meddleware/design-tokens`, static-server (own audits).
 - **Environment (2026-10-09):** `vue-tsc --noEmit` (clean); audit gate (1 allowlisted advisory, 0 open);
@@ -106,7 +106,7 @@ later controls that name to receive our traffic.
 **Remediation / evidence:** the card is now "Treasury" (`https://treasury.meddleware.co.uk`, 200),
 matching the dashboard's five tools. Re-checked 2026-10-09: no `sui-dao` link remains in `src/` and the
 host does not resolve; the docs site no longer links it either (docs audit F12, 0.0.25). Each card and
-header/footer host answers 200 (`dash.`, `treasury.`, `sui-token-deployer.`, `sui-walrus.`, `sui-seal.`,
+header/footer host answers 200 (`dash.`, `treasury.`, `sui-token-issuance.`, `sui-walrus-storage.`, `sui-sealed-storage.`,
 `sui-access-gate.`, `docs.`, `dev.`).
 
 ### F2 — App publishable to npm
@@ -117,7 +117,7 @@ header/footer host answers 200 (`dash.`, `treasury.`, `sui-token-deployer.`, `su
 versions had no provenance and no consumers. A stray manual publish is an unreviewed release path.
 **Remediation / evidence:** `private: true`; the repository has only the image workflow. The
 hand-published versions have been removed from npm (404 on 2026-10-08), so nothing remains to
-deprecate. Re-checked 2026-10-09: `private: true` is still set; `npm view @meddleware/landing` answers 404
+deprecate. Re-checked 2026-10-09: `private: true` is still set; `npm view @meddleware/landing-site` answers 404
 (2026-10-10); the repository has only the image workflow and CI.
 
 ### F3 — Card link bound without a scheme check
@@ -162,7 +162,7 @@ image and requires 404 (run 2026-10-18 with rootless podman: passed; the CI `ima
 ### F6 — Unknown paths answer 200 with the page shell
 
 **Severity:** Info   **Disposition:** RESOLVED (0.0.12, commit `ee6a1f2`)
-**Where:** `Dockerfile` (`SPA_FALLBACK=true`), `post-bootstrap/landing/base/deployment.yaml`,
+**Where:** `Dockerfile` (`SPA_FALLBACK=true`), `post-bootstrap/landing-site/base/deployment.yaml`,
 `src/main.ts` (one route, no catch-all)
 **Issue:** the image serves every unknown path with `index.html` and status 200 (live `/no/such` answers
 200 `text/html`); the router has no catch-all, so the visitor sees the header and footer around an empty
@@ -196,7 +196,7 @@ files): passed.
 ### F8 — Image release gate, scan, notices and runtime user
 
 **Severity:** Low   **Disposition:** RESOLVED (0.0.9 `96c88db`/`17cadd9`, 0.0.11 `f270057`)
-**Where:** `.github/workflows/{node-ci,docker-publish}.yml`, `Dockerfile`, `scripts/third-party-licenses.mjs`, `post-bootstrap/landing/base/deployment.yaml`
+**Where:** `.github/workflows/{node-ci,docker-publish}.yml`, `Dockerfile`, `scripts/third-party-licenses.mjs`, `post-bootstrap/landing-site/base/deployment.yaml`
 **Issue:** the checks ran only inside the release workflow (no push/PR CI until `96c88db`, 0.0.9), the image
 release was gated by a subset of them, the published image was not scanned before signing, the lockfile was not in the image (the SBOM saw
 only the base), no third-party licence texts were served with the bundled npm code, and the runtime user
@@ -271,7 +271,7 @@ cross-origin `fetch` is reported as a `connect-src` violation). With the probe g
 
 **Severity:** Info   **Disposition:** RESOLVED (2026-10-18, workspace `verify-digests.sh` default; was ACCEPTED-RISK)
 **Where:** `bootstrap/images/verify-digests.sh` (workspace); this repository publishes no verify command
-**Issue:** the cluster check accepted any workflow identity of `github.com/meddleware-org/landing`.
+**Issue:** the cluster check accepted any workflow identity of `github.com/meddleware-org/landing-site`.
 **Impact:** a workflow added by someone with write access could have signed an image the check would accept.
 **Remediation / evidence:** fixed in the workspace script on 2026-10-18: the default identity in
 `bootstrap/images/verify-digests.sh` is now `^https://github\.com/meddleware-org/${name}/\.github/workflows/docker-publish\.yml@refs/tags/v`
@@ -348,7 +348,7 @@ only); no `allowScripts`, no `overrides`, no `prepare`/`postinstall` in `package
 | --- | --- | --- | --- | --- |
 | `QUAY_TOKEN`, `DOCKERHUB_TOKEN`, `PRIVATE_REGISTRY_*` | GitHub secrets | long-lived robot accounts (inventory: `OPERATOR_TASKS.md`) | image push | F13 |
 | image signing | GitHub Actions | cosign keyless | images | n/a |
-| npm `@meddleware/landing` | — | not published (`private`) | none | n/a (F2) |
+| npm `@meddleware/landing-site` | — | not published (`private`) | none | n/a (F2) |
 
 CI & release integrity: actions pinned by SHA (workflows read 2026-10-09); explicit `permissions:` per
 workflow and job (`id-token`/`attestations` only on the signing job); tag-gated image release (`v*`);
@@ -506,3 +506,4 @@ None.
   - Dependabot policy encoded in .github/dependabot.yml (majors declined); open PRs merged 2026-10-19
   - `docker-publish.yml`: the private rebuild jobs are replaced by one `mirror-private` job that copies the published quay.io image (and its cosign artifacts) to the self-hosted registry by digest and fails unless the digest and the signature match (build once, promote by digest; committed locally, not yet released; the `PRIVATE_REGISTRY_*` credentials are still unset).
 - 2026-10-22 (audit close-out) — release 0.0.13 (`v0.0.13` = `5752b4f`; `Publish (Docker)` succeeded). Image base: static-server 0.1.11 (Go 1.26.10 standard library, CVE-2026-111943, so the scan-before-sign gate passes; static-server F13). No disposition change. Not re-run in this pass: the unit tests, the build and the audit gate (the tag's own CI and publish runs succeeded).
+- 2026-10-24 — repository renamed from `landing` to `landing-site` (workspace naming convention, `docs/architecture/ADR-0003-naming.md`): package, image, host and path names updated throughout. No finding, disposition or evidence changed.

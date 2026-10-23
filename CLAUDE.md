@@ -1,4 +1,4 @@
-# CLAUDE.md — @meddleware/landing
+# CLAUDE.md — @meddleware/landing-site
 
 ## What this app is
 
@@ -54,7 +54,7 @@ Add an entry to the `tools` array in `src/components/FeaturesGrid.vue`:
 ## Deployment
 
 Served by `static-server` in k8s namespace `apps`, service name `landing`, port 80.
-Ingress: `meddleware.co.uk` → `post-bootstrap/landing/base/ingress.yaml`.
+Ingress: `meddleware.co.uk` → `post-bootstrap/landing-site/base/ingress.yaml`.
 Cloudflare Tunnel: `meddleware.co.uk` → `https://nginx-ingress-controller.nginx-ingress.svc:443`
 (No TLS Verify; HTTP Host Header `meddleware.co.uk`).
 
