@@ -5,7 +5,7 @@ on:
       - "v*"
 
 env:
-  IMAGE: landing
+  IMAGE: landing-site
 
 permissions:
   contents: read
