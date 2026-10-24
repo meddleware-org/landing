@@ -1,0 +1,20 @@
+# Meddleware
+
+> Permissionless, wallet-based tools for Sui and Walrus: storage, sealed (encrypted) storage, NFT-gated access passes, token issuance and an organisation treasury view. No accounts; you connect a Sui wallet.
+
+Address: https://meddleware.co.uk
+
+## Tools
+
+- [Dashboard (all tools in one place)](https://dash.meddleware.co.uk)
+- [Walrus Storage](https://sui-walrus-storage.meddleware.co.uk)
+- [Sealed Storage](https://sui-sealed-storage.meddleware.co.uk)
+- [Access Gate](https://sui-access-gate.meddleware.co.uk)
+- [Token Issuance](https://sui-token-issuance.meddleware.co.uk)
+- [Treasury](https://treasury.meddleware.co.uk)
+- [Status](https://status.meddleware.co.uk)
+
+## Documentation
+
+- [User documentation (llms.txt)](https://docs.meddleware.co.uk/llms.txt)
+- [Developer documentation (llms.txt)](https://dev.meddleware.co.uk/llms.txt)

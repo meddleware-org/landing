@@ -1,0 +1,5 @@
+# Meddleware: a human-facing app (Content Signals below).
+# Content Signals (https://contentsignals.org/): search and AI answers may use this content.
+User-agent: *
+Content-Signal: search=yes, ai-input=yes
+Allow: /
